@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
 from Datasets.utils import (ToTensor, Compose, CropCenter, dataset_intrinsics,
                              DownscaleFlow, plot_traj, visflow,
-                             load_kiiti_intrinsics)
+                             load_kitti_intrinsics)
 from Datasets.tartanTrajFlowDataset import TrajFolderDataset
 from Datasets.transformation import ses2poses_quat
 from evaluator.tartanair_evaluator import TartanAirEvaluator
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     focalx, focaly, centerx, centery = dataset_intrinsics(datastr)
     if args.kitti_intrinsics_file.endswith('.txt') and datastr == 'kitti':
-        focalx, focaly, centerx, centery = load_kiiti_intrinsics(
+        focalx, focaly, centerx, centery = load_kitti_intrinsics(
             args.kitti_intrinsics_file)
 
     transform = Compose([

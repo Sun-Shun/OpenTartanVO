@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.env/
+venv/
+env/
+
+# Models and large binary files
+models/*.pkl
+models/*.pth
+models/*.pt
+
+# Output
+results/*.txt
+results/*.png
+results/*.npy
+results/*_flow/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

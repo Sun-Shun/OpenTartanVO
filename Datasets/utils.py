@@ -239,7 +239,7 @@ def make_intrinsics_layer(w, h, fx, fy, ox, oy):
     return intrinsicLayer
 
 
-def load_kiiti_intrinsics(filename):
+def load_kitti_intrinsics(filename):
     """Load camera intrinsics from a KITTI calib.txt file."""
     with open(filename, 'r') as f:
         lines = f.readlines()
