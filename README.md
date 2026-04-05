@@ -107,8 +107,6 @@ pip install numpy==2.2.6 opencv-python==4.13.0.92 scipy==1.15.3 \
     matplotlib==3.10.8 tensorboard==2.20.0
 ```
 
-> 若任务涉及 ROS 通信节点，请确保已正确安装 ROS 2 基础组件并 source 工作空间。
-
 ---
 
 ## 📂 数据集目录结构
@@ -134,8 +132,6 @@ Dataset_Root/
 ---
 
 ## 🚀 运行指南
-
-所有路径均通过命令行参数传入，无需修改源代码。
 
 ### 参数说明
 
@@ -273,23 +269,23 @@ python test.py \
 **CUVO（本仓库对应论文）**
 
 ```bibtex
-@article{cuvo2024,
-  title     = {Analogy-Augmented Uncertainty-aware Monocular Visual Odometry System},
-  author    = {Sun, Shunwang and Zhang, Jialu and Xue, Tingxi},
-  journal   = {IEEE},
-  year      = {2024},
-  url       = {https://ieeexplore.ieee.org/abstract/document/11396037}
+@article{li2026analogy,
+  title={Analogy-Augmented Uncertainty-aware Monocular Visual Odometry},
+  author={Li, Jituo and Sun, Shunwang and Xue, Tingxi and Liu, Xinqi and Zhang, Jialu and Dong, Huixu and Lu, Guodong},
+  journal={IEEE Transactions on Circuits and Systems for Video Technology},
+  year={2026},
+  publisher={IEEE}
 }
 ```
 
 **OpenTartanVO（本仓库复现框架）**
 
 ```bibtex
-@misc{opentrain2024,
+@misc{opentrain2025,
   title     = {OpenTartanVO: An Open-Source Reproduction and Engineering Optimization of TartanVO},
   author    = {Sun, Shunwang and Zhang, Jialu and Xue, Tingxi},
-  year      = {2024},
-  howpublished = {\url{https://github.com/your-repo/opentrain}}
+  year      = {2025},
+  howpublished = {\url{https://github.com/Sun-Shun/OpenTartanVO}}
 }
 ```
 
