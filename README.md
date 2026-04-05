@@ -28,17 +28,6 @@ OpenTrain 对 TartanVO 进行了模块化重构，填补了原始框架在训练
 
 ---
 
-## ⚠️ 重要注意事项
-
-在运行或调试代码前，请检查 `utils.py` 第 517 行的 `make_intrinsics_layer` 函数：
-
-- 须确保 `hh` 与 `ww` 的维度映射正确：
-  - `ww` → `0`（图像宽度）
-  - `hh` → `0`（图像高度）
-- 当前代码已在 **PyTorch 1.12** 及其衍生版本下测试通过，其他版本请自行验证。
-
----
-
 ## 🛠️ 环境配置
 
 推荐使用 Conda 管理运行环境。
@@ -85,7 +74,40 @@ Dataset_Root/
 
 ## 🚀 运行指南
 
-在运行前，请将代码中的数据集根目录修改为本机绝对路径。
+所有路径均通过命令行参数传入，无需修改源代码。
+
+### 参数说明
+
+**train.py 参数**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|------|:----:|--------|------|
+| `--data_root` | ✅ | — | 数据集根目录（须包含 `train/` 和 `test/`）|
+| `--only_flow` | — | `False` | 仅训练光流网络 |
+| `--only_pose` | — | `False` | 仅训练位姿网络 |
+| `--vo` | — | `False` | 完整端到端 VO 训练 |
+| `--flow_model` | — | `None` | 光流预训练权重路径 |
+| `--pose_model` | — | `None` | 位姿预训练权重路径 |
+| `--datastr` | — | `tartanair` | 数据集类型：`tartanair` / `euroc` / `kitti` |
+| `--logs_dir` | — | `./runs_test` | TensorBoard 日志目录 |
+| `--root_path` | — | `./models` | 模型保存目录 |
+| `--batch_size` | — | `1` | 批大小 |
+| `--num_workers` | — | `1` | DataLoader 工作进程数 |
+| `--sample_step` | — | `1` | 数据抽样步长（调试时可设为 200）|
+
+> `--only_flow`、`--only_pose`、`--vo` 三者必须恰好有一个为 `True`。
+
+**test.py 参数**
+
+| 参数 | 必填 | 默认值 | 说明 |
+|------|:----:|--------|------|
+| `--data_root` | ✅ | — | 数据集根目录（须包含 `test/`）|
+| `--model_path` | ✅ | — | 预训练模型权重路径 |
+| `--datastr` | — | `tartanair` | 数据集类型：`tartanair` / `euroc` / `kitti` |
+| `--test_mode` | — | `vo` | 测试模式：`flow` / `pose` / `vo` |
+| `--results_dir` | — | `./results` | 轨迹图保存目录（自动创建）|
+
+---
 
 ### 模型训练
 
@@ -93,46 +115,44 @@ Dataset_Root/
 
 ```bash
 python train.py \
-    --is_train True --only_flow True --only_pose False --vo False \
+    --data_root /path/to/dataset \
+    --only_flow True \
+    --flow_model ./models/flow/raft-small.pth \
     --datastr tartanair \
     --batch_size 1 --num_workers 1 \
-    --logs_dir ./runs_test \
-    --flow_model ./models/flow/raft-small.pth
+    --logs_dir ./runs_test
 ```
 
 **② 仅训练位姿网络**
 
 ```bash
 python train.py \
-    --is_train True --only_flow False --only_pose True --vo False \
+    --data_root /path/to/dataset \
+    --only_pose True \
+    --pose_model ./models/only_pose/single_pose_model.train \
     --datastr tartanair \
-    --batch_size 1 \
-    --pose_model ./models/only_pose/single_pose_model.train
+    --batch_size 1
 ```
 
 **③ 完整端到端 VO 训练**
 
 ```bash
 python train.py \
-    --is_train True --only_flow False --only_pose False --vo True \
+    --data_root /path/to/dataset \
+    --vo True \
     --datastr tartanair \
     --batch_size 1
 ```
 
 ### 模型测试与评估
 
-在 `test.py` 的 `__main__` 函数中配置以下参数：
-
-| 参数 | 可选值 | 说明 |
-|------|--------|------|
-| `data_type` | `tartanair` / `euroc` / `kitti` | 评估数据集类型 |
-| `model_path` | 绝对路径字符串 | 预训练权重路径 |
-| `type` | `flow` / `pose` / `vo` | 测试的网络类型 |
-
-配置完成后执行：
-
 ```bash
-python test.py
+python test.py \
+    --data_root /path/to/dataset \
+    --model_path /path/to/model.pth \
+    --datastr tartanair \
+    --test_mode vo \
+    --results_dir ./results
 ```
 
 ---
@@ -149,13 +169,13 @@ python test.py
 
 #### Table XI — KITTI 数据集（ATE，越低越好）
 
-> 🟢 绿色 = 最优 &nbsp;|&nbsp; 🟠 橙色 = 次优 &nbsp;|&nbsp; `*` = 光流网络权重已冻结（无微调）
+> <u>**加粗下划线**</u> = 最优 &nbsp;|&nbsp; **加粗** = 次优 &nbsp;|&nbsp; `*` = 光流网络权重已冻结（无微调）
 
 | Methods | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 10 | **Avg** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TartanVO (PWC-Net) | 69.11 | 53.19 | 78.78 | 2.70 | **1.99** | 55.18 | 🟢10.50 | 13.87 | 48.16 | 27.93 | 11.90 | 🟢33.94 |
+| TartanVO (PWC-Net) | 69.11 | 53.19 | 78.78 | 2.70 | **1.99** | 55.18 | <u>**10.50**</u> | 13.87 | 48.16 | 27.93 | 11.90 | <u>**33.94**</u> |
 | TartanVO (Sea-RAFT) | **65.08** | **53.03** | 76.27 | **2.69** | **1.99** | 52.21 | **10.47** | 13.71 | 47.37 | 27.73 | 11.88 | **32.95** |
-| TartanVO (Sea-RAFT) \* **Our Baseline** | 76.91 | 144.58 | 🟠56.44 | 3.61 | 🟢3.48 | 🟠22.61 | 57.92 | 🟠7.32 | 🟠39.97 | 🟠24.74 | 🟠9.78 | 40.67 |
+| TartanVO (Sea-RAFT) \* **Our Baseline** | 76.91 | 144.58 | **56.44** | 3.61 | <u>**3.48**</u> | **22.61** | 57.92 | **7.32** | **39.97** | **24.74** | **9.78** | 40.67 |
 
 ---
 
@@ -163,9 +183,9 @@ python test.py
 
 | Methods | ME000 | ME001 | ME002 | ME003 | ME004 | ME005 | ME006 | ME007 | MH000 | MH001 | MH002 | MH003 | MH004 | MH005 | MH006 | MH007 | **Avg** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| TartanVO (PWC-Net) | 27.30 | 🟢0.86 | **0.64** | 7.18 | 🟢2.02 | **0.58** | 4.12 | **0.42** | 2.12 | **0.31** | 1.28 | 1.09 | 0.99 | 🟠1.40 | 1.74 | 🟠1.42 | 3.34 |
-| TartanVO (Sea-RAFT) | 🟢12.76 | 🟢0.86 | **0.64** | 🟠7.07 | 🟠2.01 | **0.58** | 🟠4.06 | **0.42** | 🟢2.10 | **0.31** | 🟠1.27 | **1.08** | 🟠0.93 | 🟢1.39 | 🟠1.72 | 🟢1.41 | **2.41** |
-| TartanVO (Sea-RAFT) \* **Our Baseline** | 🟠11.34 | 🟠0.45 | 🟢1.82 | 11.61 | 3.71 | 🟢0.62 | 🟢3.20 | 🟢0.54 | 3.05 | 🟢0.33 | 🟢1.04 | 🟢0.64 | 🟢0.80 | 1.83 | 🟢1.56 | 1.50 | 🟠2.75 |
+| TartanVO (PWC-Net) | 27.30 | <u>**0.86**</u> | **0.64** | 7.18 | <u>**2.02**</u> | **0.58** | 4.12 | **0.42** | 2.12 | **0.31** | 1.28 | 1.09 | 0.99 | **1.40** | 1.74 | **1.42** | 3.34 |
+| TartanVO (Sea-RAFT) | <u>**12.76**</u> | <u>**0.86**</u> | **0.64** | **7.07** | **2.01** | **0.58** | **4.06** | **0.42** | <u>**2.10**</u> | **0.31** | **1.27** | <u>**1.08**</u> | **0.93** | <u>**1.39**</u> | **1.72** | <u>**1.41**</u> | **2.41** |
+| TartanVO (Sea-RAFT) \* **Our Baseline** | **11.34** | **0.45** | <u>**1.82**</u> | 11.61 | 3.71 | <u>**0.62**</u> | <u>**3.20**</u> | <u>**0.54**</u> | 3.05 | <u>**0.33**</u> | <u>**1.04**</u> | **0.64** | <u>**0.80**</u> | 1.83 | <u>**1.56**</u> | 1.50 | **2.75** |
 
 ---
 
