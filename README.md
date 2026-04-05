@@ -2,7 +2,7 @@
 
 <p align="center">An open-source reproduction and engineering optimization of the learning-based monocular visual odometry framework TartanVO, supporting staged end-to-end training and evaluation.</p>
 
-<p align="center"><strong>Contributors:</strong> <a href="https://sun-shun.github.io/">Shunwang Sun</a> · <a href="https://github.com/zhangcv123/">Jialu Zhang</a> · Tingxi Xue&emsp;&emsp;&emsp;&emsp;<a href="README_zh.md">中文文档</a></p>
+<p align="center"><strong>Contributors:</strong> <a href="https://github.com/zhangcv123/">Jialu Zhang</a> · <a href="https://sun-shun.github.io/">Shunwang Sun</a> · Tingxi Xue&emsp;&emsp;&emsp;&emsp;<a href="README_zh.md">中文文档</a></p>
 
 ---
 
