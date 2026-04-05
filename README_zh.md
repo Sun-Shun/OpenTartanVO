@@ -2,7 +2,7 @@
 
 <p align="center">Learning-based 单目视觉里程计框架 TartanVO 的开源复现与工程优化版本，支持分阶段端到端单目视觉里程计训练与测试。</p>
 
-<p align="center"><strong>主要贡献者：</strong> <a href="https://sun-shun.github.io/">Shunwang Sun</a> ·  <a href="https://github.com/zhangcv123/">Jialu Zhang</a> · Tingxi Xue&emsp;&emsp;&emsp;&emsp;<a href="README.md">English</a></p>
+<p align="center"><strong>Contributors:</strong> <a href="https://github.com/zhangcv123/">Jialu Zhang</a> · <a href="https://sun-shun.github.io/">Shunwang Sun</a> · Tingxi Xue&emsp;&emsp;&emsp;&emsp;<a href="README.md">English</a></p>
 
 
 ---
