@@ -1,4 +1,5 @@
 import os
+import argparse
 import multiprocessing
 from glob import glob
 
@@ -17,7 +18,7 @@ from evaluator.tartanair_evaluator import TartanAirEvaluator
 
 
 # ─────────────────────────────────────────────
-#  Data loading helper  (mirrors train.py)
+#  Data loading helper
 # ─────────────────────────────────────────────
 def collect_test_sequences(root: str):
     """
@@ -59,7 +60,7 @@ def run_test(
     imgs_path: list,
     flows_path: list,
     poses_path: list,
-    test_mode: str,          # renamed from `type` to avoid shadowing builtin
+    test_mode: str,
     results_dir: str = 'results',
 ):
     """
@@ -94,7 +95,7 @@ def run_test(
 
     # ── Iterate over sequences ─────────────────
     for i in range(len(flows_path)):
-        seq_tag = os.path.basename(flows_path[i])   # e.g. '01_0000flow'
+        seq_tag = os.path.basename(flows_path[i])
         print(f'\n[{i + 1}/{len(flows_path)}] Evaluating sequence: {seq_tag}')
 
         # ── Build dataset for this sequence ────
@@ -160,20 +161,20 @@ def run_test(
                         _, pose = model([img1, img2, flow, intrinsic])
 
                     # Scale estimated translation to match GT magnitude
-                    pose_np    = pose.cpu().numpy() * pose_std
-                    gt_np      = gt_pose.cpu().numpy()
-                    gt_scale   = np.linalg.norm(gt_np[:, :3], axis=1, keepdims=True)
-                    est_norm   = np.linalg.norm(pose_np[:, :3], axis=1, keepdims=True)
+                    pose_np  = pose.cpu().numpy() * pose_std
+                    gt_np    = gt_pose.cpu().numpy()
+                    gt_scale = np.linalg.norm(gt_np[:, :3], axis=1, keepdims=True)
+                    est_norm = np.linalg.norm(pose_np[:, :3], axis=1, keepdims=True)
                     pose_np[:, :3] = pose_np[:, :3] / est_norm * gt_scale
                     motion_list.extend(pose_np.tolist())
 
                     print(f'\r  Batch {batch_idx}/{len(loader)}', end='')
 
             # ── Evaluate trajectory ─────────────
-            est_poses  = motion_ses2pose_quats(np.array(motion_list))
-            evaluator  = TartanAirEvaluator()
-            kittitype  = (datastr == 'kitti')
-            results    = evaluator.evaluate_one_trajectory(
+            est_poses = motion_ses2pose_quats(np.array(motion_list))
+            evaluator = TartanAirEvaluator()
+            kittitype = (datastr == 'kitti')
+            results   = evaluator.evaluate_one_trajectory(
                 poses_path[i], est_poses, scale=False, kittitype=kittitype,
             )
             ate = results['ate_score']
@@ -193,29 +194,41 @@ def run_test(
 # ─────────────────────────────────────────────
 if __name__ == '__main__':
 
-    # ── Configuration — edit these before running ──
-    DATA_ROOT  = '/Data_new/data/tartanair'
-    MODEL_PATH = '/tartanvo/models/pose/single_pose_model.train'
-    DATA_TYPE  = 'tartanair'   # 'tartanair' | 'euroc' | 'kitti'
-    TEST_MODE  = 'vo'          # 'flow'      | 'pose'  | 'vo'
-    RESULTS_DIR = 'results'
-    # ───────────────────────────────────────────────
+    parser = argparse.ArgumentParser(description='OpenTrain — TartanVO Testing')
+
+    # ── Paths ──────────────────────────────────
+    parser.add_argument('--data_root',   type=str, required=True,
+                        help='Dataset root directory (must contain a test/ sub-folder)')
+    parser.add_argument('--model_path',  type=str, required=True,
+                        help='Path to the pre-trained model checkpoint')
+    parser.add_argument('--results_dir', type=str, default='./results',
+                        help='Directory to save trajectory plots (default: ./results)')
+
+    # ── Dataset & mode ─────────────────────────
+    parser.add_argument('--datastr',   type=str, default='tartanair',
+                        choices=['tartanair', 'euroc', 'kitti'],
+                        help='Dataset type (default: tartanair)')
+    parser.add_argument('--test_mode', type=str, default='vo',
+                        choices=['flow', 'pose', 'vo'],
+                        help='Network to evaluate (default: vo)')
+
+    args = parser.parse_args()
 
     # spawn must be called in __main__, before any CUDA / DataLoader usage
     multiprocessing.set_start_method('spawn', force=True)
 
-    test_imgs, test_flows, test_poses = collect_test_sequences(DATA_ROOT)
+    test_imgs, test_flows, test_poses = collect_test_sequences(args.data_root)
     print(f'[Data] Found {len(test_flows)} test sequence(s).')
 
     vonet = VONet().cuda()
 
     run_test(
         model       = vonet,
-        model_path  = MODEL_PATH,
-        datastr     = DATA_TYPE,
+        model_path  = args.model_path,
+        datastr     = args.datastr,
         imgs_path   = test_imgs,
         flows_path  = test_flows,
         poses_path  = test_poses,
-        test_mode   = TEST_MODE,
-        results_dir = RESULTS_DIR,
+        test_mode   = args.test_mode,
+        results_dir = args.results_dir,
     )
