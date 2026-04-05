@@ -1,84 +1,92 @@
 <h1 align="center">OpenTartanVO — TartanVO Open Reproduction</h1>
 
-<p align="center">Learning-based 单目视觉里程计框架 TartanVO 的开源复现与工程优化版本，支持分阶段端到端单目视觉里程计训练与测试。</p>
+<p align="center">An open-source reproduction and engineering optimization of the learning-based monocular visual odometry framework TartanVO, supporting staged end-to-end training and evaluation.</p>
 
-<p align="center"><strong>主要贡献者：</strong> Shunwang Sun · Jialu Zhang · Tingxi Xue</p>
+<p align="center"><strong>Contributors:</strong> Shunwang Sun · Jialu Zhang · Tingxi Xue</p>
+
+<p align="center">
+  <a href="README_zh.md">中文文档</a>
+</p>
 
 ---
 
-## 🎉 最新论文发布
+## 🎉 Latest Publication
 
 > **Analogy-Augmented Uncertainty-aware Monocular Visual Odometry System**
 >
 > 📄 [IEEE Xplore →](https://ieeexplore.ieee.org/abstract/document/11396037)
 
-本项目是上述论文的基础复现框架。在此之上，我们提出了 **CUVO** 网络与**类比增强（Analogy Augmentation）**策略：
+This repository serves as the foundational reproduction framework for the above paper. Building upon it, we propose the **CUVO** network and **Analogy Augmentation** strategies:
 
-- **CUVO 网络：** 利用语义感知注意力机制，主动抑制高不确定性区域的干扰，提升位姿估计精度。
-- **类比增强与一致性：** 引入时序翻转、随机旋转和几何镜像，并配合一致性损失稳定训练。在仅 27k 数据下，TartanAir 和 KITTI 的零样本泛化分别最高提升 29.5% 和 23.3%。
+- **CUVO Network:** Introduces a semantics-aware attention mechanism to actively suppress high-uncertainty regions, improving pose estimation accuracy.
+- **Analogy Augmentation & Consistency:** Applies temporal reversal, random rotation, and geometric mirroring with a consistency loss to stabilize training. With only 27k training samples, zero-shot generalization improves by up to **29.5%** on TartanAir and **23.3%** on KITTI.
 
 ---
 
-## 📖 项目简介
+## 📖 Overview
 
-本项目（**OpenTartanVO**）对具备强跨域泛化能力的 **TartanVO** 进行了模块化重构与工程优化，旨在为研究者提供规范、易用的 Baseline 工程：
+**OpenTartanVO** provides a modular reconstruction and engineering optimization of **TartanVO**, a learning-based VO model with strong cross-domain generalization. It aims to offer researchers a clean, well-structured baseline:
 
-- **跨域泛化与鲁棒性：** 仅依赖合成数据集（TartanAir）训练即可直接泛化至真实世界（如 KITTI），在挑战性轨迹下远超传统几何方法。
-- **完备的工程框架：** 填补了原版训练代码空白，提供清晰的数据加载流水线、解耦的光流/位姿训练逻辑及完整的评测脚本。
+- **Cross-domain Generalization:** Trained solely on synthetic data (TartanAir), the model generalizes directly to real-world datasets (e.g., KITTI) without any fine-tuning, significantly outperforming geometry-based methods on challenging trajectories.
+- **Complete Engineering Framework:** Fills the gap left by the original codebase — providing a clear data loading pipeline, decoupled optical flow / pose training logic, and full evaluation scripts.
 
-### 光流网络说明
+### Optical Flow Network
 
-本仓库开源的光流骨干网络为 **RAFT**（Recurrent All-Pairs Field Transforms）：
+The optical flow backbone open-sourced in this repository is **RAFT** (Recurrent All-Pairs Field Transforms):
 
 > Teed & Deng, *RAFT: Recurrent All-Pairs Field Transforms for Optical Flow*, ECCV 2020
 > [📄 arXiv](https://arxiv.org/abs/2003.12039) · [💻 GitHub](https://github.com/princeton-vl/RAFT)
 
-下方评估结果（Table XI / XII）中出现的 **TartanVO (Sea-RAFT)** 系列，来自我们后续论文 *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry* 的实验，该论文将光流网络替换为 [**Sea-RAFT**](https://github.com/princeton-vl/SEA-RAFT) 以探究更强骨干网络对性能的影响，**不属于本仓库开源代码的范围**：
+The **TartanVO (Sea-RAFT)** entries in the evaluation tables (Table XI / XII) below come from experiments in our follow-up paper *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*, which replaces the flow network with [**Sea-RAFT**](https://github.com/princeton-vl/SEA-RAFT) to study the impact of a stronger backbone. **These results are outside the scope of this repository's open-sourced code.**
 
 > Wang et al., *Sea-RAFT: Simple, Efficient, Accurate RAFT for Optical Flow*, ECCV 2024
 > [📄 arXiv](https://arxiv.org/abs/2405.14793) · [💻 GitHub](https://github.com/princeton-vl/SEA-RAFT)
 
 ---
 
-## 🔧 核心训练流程
+## 🔧 Core Training Pipeline
 
-OpenTartanVO 完整复现了端到端训练的四大核心模块：
+OpenTartanVO fully reproduces the four key technical modules of TartanVO's end-to-end training:
 
-1. **两阶段网络架构：**
-   - **匹配网络 $M_\theta$（光流网络）：** 估计连续两帧的稠密光流，本仓库使用 [**RAFT**](https://github.com/princeton-vl/RAFT)，输出尺寸为 $H/4 \times W/4$。
-   - **位姿网络 $P_\phi$：** 以光流与相机内参层为输入，回归相对位姿 $\delta_t^{t+1} = (T, R)$。
-2. **分阶段训练策略：** - **阶段一：** 使用真值光流单独优化位姿网络 $P_\phi$。
-   - **阶段二：** 联合光流与位姿网络，进行端到端优化，总损失为：
+1. **Two-stage Network Architecture:**
+   - **Matching Network $M_\theta$ (Optical Flow):** Estimates dense optical flow from two consecutive frames. This repository uses [**RAFT**](https://github.com/princeton-vl/RAFT); output resolution is $H/4 \times W/4$.
+   - **Pose Network $P_\phi$:** Takes optical flow and the camera intrinsics layer as input to regress the relative pose $\delta_t^{t+1} = (T, R)$.
+
+2. **Staged Training Strategy:**
+   - **Stage 1:** Optimize the pose network $P_\phi$ independently using ground-truth optical flow.
+   - **Stage 2:** Connect $M_\theta$ and $P_\phi$ end-to-end for joint optimization. The total loss is:
    $$\mathcal{L} = \lambda \mathcal{L}_f + \mathcal{L}_p$$
-3. **尺度不变损失（Up-to-Scale Loss）：** 单目 VO 存在固有尺度歧义，网络仅预测平移方向，通过归一化距离损失消除尺度问题：
+
+3. **Up-to-Scale Loss Function:** Monocular VO has inherent scale ambiguity. The network predicts translation direction only, using a normalized distance loss to eliminate the scale problem:
    $$\mathcal{L}_p^{norm} = \left\| \frac{\hat{T}}{\max(\|\hat{T}\|, \epsilon)} - \frac{T}{\max(\|T\|, \epsilon)} \right\| + \|\hat{R} - R\|$$
-4. **相机内参层（Intrinsics Layer）：** 将相机内参编码为二通道特征图并与光流拼接，结合随机裁剪与缩放（RCR）策略，使模型免微调即可适配多种不同焦距的相机。
+
+4. **Camera Intrinsics Layer (IL):** Camera intrinsics are encoded into a two-channel feature map and concatenated with the optical flow. Combined with Random Crop-and-Resize (RCR) augmentation, the model adapts to cameras with varying focal lengths without any fine-tuning.
 
 ---
 
-## 🛠️ 环境配置
+## 🛠️ Environment Setup
 
-推荐使用 Conda 管理运行环境。
+We recommend using Conda to manage the environment.
 
 ```bash
-# 1. 创建并激活虚拟环境
+# 1. Create and activate the virtual environment
 conda create -n tartanvopen python=3.10
 conda activate tartanvopen
 
-# 2. 安装 PyTorch（基于 CUDA 11.8）
+# 2. Install PyTorch (CUDA 11.8)
 pip install torch==2.7.1+cu118 torchvision==0.22.1+cu118 torchaudio==2.7.1+cu118 \
     --extra-index-url https://download.pytorch.org/whl/cu118
 
-# 3. 安装核心依赖库
+# 3. Install core dependencies
 pip install numpy==2.2.6 opencv-python==4.13.0.92 scipy==1.15.3 \
     matplotlib==3.10.8 tensorboard==2.20.0
 ```
 
 ---
 
-## 📂 数据集目录结构
+## 📂 Dataset Directory Structure
 
-以 KITTI / TartanAir 为例，请严格按照以下结构存放数据：
+Using KITTI / TartanAir as an example, please organize your data strictly as follows:
 
 ```
 Dataset_Root/
@@ -88,54 +96,54 @@ Dataset_Root/
 │   │       └── flow.npy
 │   ├── train_img/
 │   ├── train_pose/
-│   └── train_mask/          # 可选
+│   └── train_mask/          # optional
 └── test/
     ├── test_flow/
     ├── test_img/
     ├── test_pose/
-    └── test_mask/            # 可选
+    └── test_mask/            # optional
 ```
 
 ---
 
-## 🚀 运行指南
+## 🚀 Usage
 
-### 参数说明
+### Argument Reference
 
-**train.py 参数**
+**train.py arguments**
 
-| 参数 | 必填 | 默认值 | 说明 |
-|------|:----:|--------|------|
-| `--data_root` | ✅ | — | 数据集根目录（须包含 `train/` 和 `test/`）|
-| `--only_flow` | — | `False` | 仅训练光流网络 |
-| `--only_pose` | — | `False` | 仅训练位姿网络 |
-| `--vo` | — | `False` | 完整端到端 VO 训练 |
-| `--flow_model` | — | `None` | 光流预训练权重路径 |
-| `--pose_model` | — | `None` | 位姿预训练权重路径 |
-| `--datastr` | — | `tartanair` | 数据集类型：`tartanair` / `euroc` / `kitti` |
-| `--logs_dir` | — | `./runs_test` | TensorBoard 日志目录 |
-| `--root_path` | — | `./models` | 模型保存目录 |
-| `--batch_size` | — | `1` | 批大小 |
-| `--num_workers` | — | `1` | DataLoader 工作进程数 |
-| `--sample_step` | — | `1` | 数据抽样步长（调试时可设为 200）|
+| Argument | Required | Default | Description |
+|----------|:--------:|---------|-------------|
+| `--data_root` | ✅ | — | Dataset root directory (must contain `train/` and `test/`) |
+| `--only_flow` | — | `False` | Train the optical flow network only |
+| `--only_pose` | — | `False` | Train the pose network only |
+| `--vo` | — | `False` | Full end-to-end VO training |
+| `--flow_model` | — | `None` | Path to pre-trained flow model weights |
+| `--pose_model` | — | `None` | Path to pre-trained pose model weights |
+| `--datastr` | — | `tartanair` | Dataset type: `tartanair` / `euroc` / `kitti` |
+| `--logs_dir` | — | `./runs_test` | TensorBoard log directory |
+| `--root_path` | — | `./models` | Checkpoint save directory |
+| `--batch_size` | — | `1` | Batch size |
+| `--num_workers` | — | `1` | DataLoader worker count |
+| `--sample_step` | — | `1` | Data sub-sampling step (set to 200 for quick debug runs) |
 
-> `--only_flow`、`--only_pose`、`--vo` 三者必须恰好有一个为 `True`。
+> Exactly one of `--only_flow`, `--only_pose`, and `--vo` must be `True`.
 
-**test.py 参数**
+**test.py arguments**
 
-| 参数 | 必填 | 默认值 | 说明 |
-|------|:----:|--------|------|
-| `--data_root` | ✅ | — | 数据集根目录（须包含 `test/`）|
-| `--model_path` | ✅ | — | 预训练模型权重路径 |
-| `--datastr` | — | `tartanair` | 数据集类型：`tartanair` / `euroc` / `kitti` |
-| `--test_mode` | — | `vo` | 测试模式：`flow` / `pose` / `vo` |
-| `--results_dir` | — | `./results` | 轨迹图保存目录（自动创建）|
+| Argument | Required | Default | Description |
+|----------|:--------:|---------|-------------|
+| `--data_root` | ✅ | — | Dataset root directory (must contain `test/`) |
+| `--model_path` | ✅ | — | Path to the pre-trained model checkpoint |
+| `--datastr` | — | `tartanair` | Dataset type: `tartanair` / `euroc` / `kitti` |
+| `--test_mode` | — | `vo` | Evaluation mode: `flow` / `pose` / `vo` |
+| `--results_dir` | — | `./results` | Directory for trajectory plots (auto-created) |
 
 ---
 
-### 模型训练
+### Training
 
-**① 仅训练光流网络**
+**① Flow network only**
 
 ```bash
 python train.py \
@@ -147,7 +155,7 @@ python train.py \
     --logs_dir ./runs_test
 ```
 
-**② 仅训练位姿网络**
+**② Pose network only**
 
 ```bash
 python train.py \
@@ -158,7 +166,7 @@ python train.py \
     --batch_size 128
 ```
 
-**③ 完整端到端 VO 训练**
+**③ Full end-to-end VO**
 
 ```bash
 python train.py \
@@ -168,7 +176,7 @@ python train.py \
     --batch_size 128
 ```
 
-### 模型测试与评估
+### Evaluation
 
 ```bash
 python test.py \
@@ -181,19 +189,19 @@ python test.py \
 
 ---
 
-## 📊 评估指标与结果
+## 📊 Evaluation & Results
 
-### 可复现性分析（Reproducibility Analysis）
+### Reproducibility Analysis
 
-我们以 [Sea-RAFT](https://github.com/princeton-vl/SEA-RAFT) 替换 RAFT 作为光流骨干网络（该替换实验属于后续论文 *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*，不在本仓库开源代码范围内），在严格遵循原始训练流程与损失函数（包含光流网络微调）的前提下进行复现。结果表明，使用 Sea-RAFT 的复现版本在 KITTI 与 TartanAir 基准上均达到或超越原始 PWC-Net 实现水平。
+In our follow-up paper *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*, we replace RAFT with [Sea-RAFT](https://github.com/princeton-vl/SEA-RAFT) as the optical flow backbone (this substitution is outside the scope of this repository's open-sourced code), strictly following the original training pipeline and loss functions including flow network fine-tuning. Results show that the Sea-RAFT-based reproduction matches or surpasses the original PWC-Net implementation on both KITTI and TartanAir.
 
-> **关于冻结光流骨干网络的说明：** 我们在 CUVO 中选择冻结 Sea-RAFT 骨干网络权重，原因在于联合微调重型光流网络与位姿估计器对 GPU 显存与训练时间消耗极大，结合 Analogy Augmentation 策略后在当前硬件上已不可行。验证实验表明，冻结模型在大多数序列上优于微调版本，平均 ATE 差异极小，仅在少数困难序列（如 KITTI 01、06 及 TartanAir ME002、MH000）上略有下降。
+> **Note on freezing the flow backbone:** In CUVO, we choose to freeze the Sea-RAFT backbone weights, as jointly fine-tuning the heavy flow network and the pose estimator demands excessive GPU memory and training time — infeasible on current hardware when combined with the Analogy Augmentation strategy. Experiments show the frozen model outperforms the fine-tuned version on most sequences, with only marginal average ATE difference; slight degradation is observed on a few difficult sequences (e.g., KITTI 01, 06 and TartanAir ME002, MH000).
 
 ---
 
-#### Table XI — KITTI 数据集（ATE，越低越好）
+#### Table XI — KITTI Dataset (ATE ↓, lower is better)
 
-> <u>**加粗下划线**</u> = 最优 &nbsp;|&nbsp; **加粗** = 次优 &nbsp;|&nbsp; `*` = 光流网络权重已冻结（无微调）
+> <u>**Bold + Underline**</u> = Best &nbsp;|&nbsp; **Bold** = Second Best &nbsp;|&nbsp; `*` = Flow network weights frozen (no fine-tuning)
 
 | Methods | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 10 | **Avg** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -203,7 +211,7 @@ python test.py \
 
 ---
 
-#### Table XII — TartanAir 数据集（ATE，越低越好）
+#### Table XII — TartanAir Dataset (ATE ↓, lower is better)
 
 | Methods | ME000 | ME001 | ME002 | ME003 | ME004 | ME005 | ME006 | ME007 | MH000 | MH001 | MH002 | MH003 | MH004 | MH005 | MH006 | MH007 | **Avg** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -213,15 +221,15 @@ python test.py \
 
 ---
 
-### 输出文件说明
+### Output Files
 
-| 任务 | 指标 | 输出说明 |
-|------|------|----------|
-| 光流评估 | EPE（端点误差） | 终端直接输出 |
-| 轨迹评估 | ATE（绝对轨迹误差） | 自动计算并展示 |
-| 可视化 | 轨迹对比图（PNG） | 保存至 `results/` 目录，标题含 ATE 分数 |
+| Task | Metric | Output |
+|------|--------|--------|
+| Flow evaluation | EPE (Endpoint Error) | Printed to terminal |
+| Trajectory evaluation | ATE (Absolute Trajectory Error) | Computed and displayed automatically |
+| Visualization | Trajectory comparison plot (PNG) | Saved to `results/` with ATE score in title |
 
-> **注意：** 运行测试前，请手动在项目根目录创建 `results/` 文件夹，否则保存轨迹图时将报错。
+> **Note:** Please create the `results/` directory before running evaluation, otherwise saving the trajectory plot will raise an error.
 >
 > ```bash
 > mkdir -p results
@@ -229,11 +237,11 @@ python test.py \
 
 ---
 
-## 📄 引用 (Citation)
+## 📄 Citation
 
-如果本项目对你的研究有所帮助，请引用以下论文：
+If this project is useful for your research, please consider citing:
 
-**CUVO（本仓库对应论文）**
+**CUVO (paper associated with this repository)**
 
 ```bibtex
 @article{li2026analogy,
@@ -245,7 +253,7 @@ python test.py \
 }
 ```
 
-**OpenTartanVO（本仓库复现框架）**
+**OpenTartanVO (this reproduction framework)**
 
 ```bibtex
 @misc{opentrain2025,
@@ -279,3 +287,19 @@ python test.py \
 ```
 
 More technical details are available in the [TartanVO paper](https://arxiv.org/abs/2011.00359).
+
+---
+
+## 📜 License
+
+This software is licensed under the **BSD License**.
+
+Copyright © 2020, Carnegie Mellon University. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+- Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+> **Disclaimer:** This software is provided by the copyright holders and contributors "as is" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall the copyright holder or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
