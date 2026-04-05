@@ -67,34 +67,31 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='OpenTrain — TartanVO Training')
 
     # ── Paths ──────────────────────────────────
-    parser.add_argument('--data_root',   type=str,
-                        default='/home/zhang/Data_new/data/tartanair',
-                        help='Dataset root directory (contains train/ and test/)')
-    parser.add_argument('--logs_dir',    type=str, default='./runs_test',
-                        help='TensorBoard log directory')
-    parser.add_argument('--root_path',   type=str, default='./models',
-                        help='Directory to save checkpoints')
-    parser.add_argument('--pose_model',  type=str,
-                        default='./models/only_pose/single_pose_model.train',
-                        help='Pre-trained pose model path')
-    parser.add_argument('--flow_model',  type=str,
-                        default='./models/flow/raft-small.pth',
-                        help='Pre-trained flow model path')
+    parser.add_argument('--data_root',  type=str, required=True,
+                        help='Dataset root directory (must contain train/ and test/ sub-folders)')
+    parser.add_argument('--logs_dir',   type=str, default='./runs_test',
+                        help='TensorBoard log directory (default: ./runs_test)')
+    parser.add_argument('--root_path',  type=str, default='./models',
+                        help='Directory to save checkpoints (default: ./models)')
+    parser.add_argument('--pose_model', type=str, default=None,
+                        help='Pre-trained pose model path (required when --only_pose or --vo)')
+    parser.add_argument('--flow_model', type=str, default=None,
+                        help='Pre-trained flow model path (required when --only_flow or --vo)')
 
     # ── Dataset ────────────────────────────────
     parser.add_argument('--datastr',     type=str, default='tartanair',
                         choices=['tartanair', 'euroc', 'kitti'],
                         help='Dataset type')
-    parser.add_argument('--sample_step', type=int, default=200,
-                        help='Sub-sample step for quick experiments (1 = use all data)')
+    parser.add_argument('--sample_step', type=int, default=1,
+                        help='Sub-sample step for quick experiments (default: 1 = use all data)')
 
     # ── Training mode ──────────────────────────
-    parser.add_argument('--is_train',   type=str2bool, default=True)
-    parser.add_argument('--only_flow',  type=str2bool, default=False,
+    parser.add_argument('--is_train',  type=str2bool, default=True)
+    parser.add_argument('--only_flow', type=str2bool, default=False,
                         help='Train flow network only')
-    parser.add_argument('--only_pose',  type=str2bool, default=False,
+    parser.add_argument('--only_pose', type=str2bool, default=False,
                         help='Train pose network only')
-    parser.add_argument('--vo',         type=str2bool, default=True,
+    parser.add_argument('--vo',        type=str2bool, default=False,
                         help='Train full end-to-end VO network')
 
     # ── Optimisation ───────────────────────────
