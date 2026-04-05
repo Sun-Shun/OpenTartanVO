@@ -1,79 +1,145 @@
 import os
-from TartanVO import TartanVO
 import argparse
-from glob import glob
 import multiprocessing
+from glob import glob
 
-# ###############################相关路径设置######################################
-train_scene = glob('/home/zhang/Data_new/data/tartanair/train')
-test_scene = glob('/home/zhang/Data_new/data/tartanair/test')
-train_scene.sort()
-test_scene.sort()
-# dataset root directory
-train_img, train_flow, train_mask, train_pose = [], [], [], []
-test_img, test_flow, test_mask, test_pose = [], [], [], []
+from TartanVO import TartanVO
 
-for t_scene in train_scene:
-    train_img_dir = glob(t_scene + "/train_img" + "/*")
-    train_flow_dir = glob(t_scene + "/train_flow" + "/*")
-    train_mask_dir = glob(t_scene + "/train_mask" + "/*")
-    train_pose_dir = glob(t_scene + "/train_pose" + "/*")
-    try:
-        assert len(train_flow_dir) == len(train_pose_dir)
-    except AssertionError:
-        print(t_scene)
 
-    train_img_dir.sort()
-    train_flow_dir.sort()
-    train_mask_dir.sort()
-    train_pose_dir.sort()
-    train_img += train_img_dir
-    train_flow += train_flow_dir
-    train_mask += train_mask_dir
-    train_pose += train_pose_dir
+# ─────────────────────────────────────────────
+#  Helper: argparse-compatible boolean parsing
+# ─────────────────────────────────────────────
+def str2bool(v: str) -> bool:
+    """
+    Fix argparse bool bug: bool("False") == True.
+    Now --flag False / --flag true / --flag 0 all work as expected.
+    """
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', '0'):
+        return False
+    raise argparse.ArgumentTypeError('Boolean value expected.')
 
-for v_scene in test_scene:
-    test_img_dir = glob(v_scene + "/test_img" + "/*")
-    test_flow_dir = glob(v_scene + "/test_flow" + "/*")
-    test_mask_dir = glob(v_scene + "/test_mask" + "/*")
-    test_pose_dir = glob(v_scene + "/test_pose" + "/*")
-    try:
-        assert len(test_flow_dir) == len(test_pose_dir)
-    except AssertionError:
-        print(v_scene)
 
-    test_img_dir.sort()
-    test_flow_dir.sort()
-    test_mask_dir.sort()
-    test_pose_dir.sort()
-    test_img += test_img_dir
-    test_flow += test_flow_dir
-    test_mask += test_mask_dir
-    test_pose += test_pose_dir
+# ─────────────────────────────────────────────
+#  Data loading helper
+# ─────────────────────────────────────────────
+def collect_sequences(root: str, split: str):
+    """
+    Walk through all scene folders under `root/<split>/` and collect
+    sorted lists of (img, flow, mask, pose) sub-directories.
 
+    Args:
+        root:  Dataset root directory, e.g. '/data/tartanair'
+        split: 'train' or 'test'
+
+    Returns:
+        Tuple of four sorted lists: (imgs, flows, masks, poses)
+    """
+    scenes = sorted(glob(os.path.join(root, split)))
+    imgs, flows, masks, poses = [], [], [], []
+
+    for scene in scenes:
+        img_dirs  = sorted(glob(os.path.join(scene, f'{split}_img',  '*')))
+        flow_dirs = sorted(glob(os.path.join(scene, f'{split}_flow', '*')))
+        mask_dirs = sorted(glob(os.path.join(scene, f'{split}_mask', '*')))  # optional
+        pose_dirs = sorted(glob(os.path.join(scene, f'{split}_pose', '*')))
+
+        if len(flow_dirs) != len(pose_dirs):
+            print(f'[WARNING] flow/pose count mismatch in: {scene}  '
+                  f'(flow={len(flow_dirs)}, pose={len(pose_dirs)})')
+
+        imgs  += img_dirs
+        flows += flow_dirs
+        masks += mask_dirs
+        poses += pose_dirs
+
+    return imgs, flows, masks, poses
+
+
+# ─────────────────────────────────────────────
+#  Entry point
+# ─────────────────────────────────────────────
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='VO')
-    parser.add_argument('--train_type', type=str, default='vo', help='Tensorboard_name')
-    parser.add_argument('--logs_dir', type=str, default='./runs_test', help='logs_dir')
-    parser.add_argument('--root_path', type=str, default='./models', help='save_model_path')
-    parser.add_argument('--pose_model', type=str, default='./models/only_pose/single_pose_model.train', help='model_path')
-    parser.add_argument('--flow_model', type=str, default='./models/flow/raft-small.pth', help='model_path')
-    parser.add_argument('--datastr', default='tartanair', help='dataset_type:euroc or kitti')
-    # train
-    parser.add_argument('--is_train', type=bool, default=True, help='is_train')
-    parser.add_argument('--only_pose', type=bool, default=False, help='only_posenet')
-    parser.add_argument('--only_flow', type=bool, default=True, help='only_flow')
-    parser.add_argument('--vo', type=bool, default=False, help='vo')
-    # optimization
-    parser.add_argument('--batch_size', type=int, default=1, help='bath_size')
-    parser.add_argument('--num_workers', type=int, default=1, help='num_workers')
+    parser = argparse.ArgumentParser(description='OpenTrain — TartanVO Training')
+
+    # ── Paths ──────────────────────────────────
+    parser.add_argument('--data_root',   type=str,
+                        default='/home/zhang/Data_new/data/tartanair',
+                        help='Dataset root directory (contains train/ and test/)')
+    parser.add_argument('--logs_dir',    type=str, default='./runs_test',
+                        help='TensorBoard log directory')
+    parser.add_argument('--root_path',   type=str, default='./models',
+                        help='Directory to save checkpoints')
+    parser.add_argument('--pose_model',  type=str,
+                        default='./models/only_pose/single_pose_model.train',
+                        help='Pre-trained pose model path')
+    parser.add_argument('--flow_model',  type=str,
+                        default='./models/flow/raft-small.pth',
+                        help='Pre-trained flow model path')
+
+    # ── Dataset ────────────────────────────────
+    parser.add_argument('--datastr',     type=str, default='tartanair',
+                        choices=['tartanair', 'euroc', 'kitti'],
+                        help='Dataset type')
+    parser.add_argument('--sample_step', type=int, default=200,
+                        help='Sub-sample step for quick experiments (1 = use all data)')
+
+    # ── Training mode ──────────────────────────
+    parser.add_argument('--is_train',   type=str2bool, default=True)
+    parser.add_argument('--only_flow',  type=str2bool, default=False,
+                        help='Train flow network only')
+    parser.add_argument('--only_pose',  type=str2bool, default=False,
+                        help='Train pose network only')
+    parser.add_argument('--vo',         type=str2bool, default=True,
+                        help='Train full end-to-end VO network')
+
+    # ── Optimisation ───────────────────────────
+    parser.add_argument('--batch_size',  type=int, default=1)
+    parser.add_argument('--num_workers', type=int, default=1)
+
     args = parser.parse_args()
-    vo_model = TartanVO(args, train_img[::200], train_flow[::200], train_mask[::200], train_pose[::200], test_img[::200], test_flow[::200], test_mask[::200], test_pose[::200])
+
+    # ── Validate training mode flags ───────────
+    active = sum([args.only_flow, args.only_pose, args.vo])
+    if active != 1:
+        parser.error('Exactly one of --only_flow / --only_pose / --vo must be True.')
+
+    # ── Collect data ───────────────────────────
+    step = args.sample_step
+    train_imgs, train_flows, train_masks, train_poses = collect_sequences(args.data_root, 'train')
+    test_imgs,  test_flows,  test_masks,  test_poses  = collect_sequences(args.data_root, 'test')
+
+    train_imgs,  train_flows,  train_masks,  train_poses  = (
+        train_imgs[::step], train_flows[::step], train_masks[::step], train_poses[::step]
+    )
+    test_imgs,   test_flows,   test_masks,   test_poses   = (
+        test_imgs[::step],  test_flows[::step],  test_masks[::step],  test_poses[::step]
+    )
+
+    print(f'[Data] train sequences: {len(train_flows)}  |  test sequences: {len(test_flows)}')
+
+    # ── Build model ────────────────────────────
+    vo_model = TartanVO(
+        args,
+        train_imgs,  train_flows,  train_masks,  train_poses,
+        test_imgs,   test_flows,   test_masks,   test_poses,
+    )
+
+    # ── Launch training ────────────────────────
     if args.only_pose:
+        # spawn is required for CUDA + DataLoader with multiple workers
         multiprocessing.set_start_method('spawn')
-        vo_model.pose_train(epochs=100, lr_rate=0.0001, step_size=[30, 50], pre_train=False, weight_decay=1e-4)
+        vo_model.pose_train(epochs=100, lr_rate=1e-4, step_size=[30, 50],
+                            pre_train=False, weight_decay=1e-4)
+
     elif args.only_flow:
-        vo_model.flow_train(epochs=100, lr_rate=0.0003, step_size=[30, 50], pre_train=True, weight_decay=1e-4)
-    else:
-        vo_model.vo_train(epochs=100, lr_rate=0.00005, step_size=[10], pre_train=True, weight_decay=1e-4)
+        vo_model.flow_train(epochs=100, lr_rate=3e-4, step_size=[30, 50],
+                            pre_train=True, weight_decay=1e-4)
+
+    else:  # full VO
+        vo_model.vo_train(epochs=100, lr_rate=5e-5, step_size=[10],
+                          pre_train=True, weight_decay=1e-4)
