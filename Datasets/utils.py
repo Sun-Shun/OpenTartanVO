@@ -34,16 +34,7 @@ class Compose(object):
         return img
 
 
-def dataset_intrinsics(dataset='tartanair'):
-    if dataset == 'kitti':
-        focalx, focaly, centerx, centery = 707.0912, 707.0912, 601.8873, 183.1104
-    elif dataset == 'euroc':
-        focalx, focaly, centerx, centery = 458.6539916992, 457.2959899902, 367.2149963379, 248.3750000000
-    elif dataset == 'tartanair':
-        focalx, focaly, centerx, centery = 320.0, 320.0, 320.0, 240.0
-    else:
-        return None
-    return focalx, focaly, centerx, centery
+
 
 
 
@@ -491,7 +482,7 @@ def dataset_intrinsics(dataset='tartanair'):
 
 def plot_traj(gtposes, estposes, vis=False, savefigname=None, title=''):
     fig = plt.figure(figsize=(4, 4))
-    cm = plt.cm.get_cmap('Spectral')
+    cm = plt.colormaps['Spectral']  # plt.cm.get_cmap is deprecated since matplotlib 3.7
 
     plt.subplot(111)
     plt.plot(gtposes[:, 0], gtposes[:, 1], linestyle='dashed', c='k')
@@ -514,18 +505,32 @@ def plot_traj(gtposes, estposes, vis=False, savefigname=None, title=''):
 #     intrinsicLayer = np.stack((ww, hh)).transpose(1, 2, 0)
 #     return intrinsicLayer
 
-def make_intrinsics_layer(w, h, fx, fy, ox, oy,use_gpu=False):
+def make_intrinsics_layer(w, h, fx, fy, ox, oy, use_gpu=False):
+    """
+    Build a (2, h, w) intrinsics feature map used as network input.
+
+    Channel 0: (col_index - cx + 0.5) / fx  → normalised x (width) coordinate
+    Channel 1: (row_index - cy + 0.5) / fy  → normalised y (height) coordinate
+
+    indexing='ij' is specified explicitly so that:
+      hh[i, j] == i  (row / height index)
+      ww[i, j] == j  (col  / width  index)
+    This is consistent across all PyTorch versions and suppresses the
+    UserWarning introduced in PyTorch 1.10.
+    """
     if use_gpu:
-        hh, ww = torch.meshgrid( torch.arange(h).cuda(), torch.arange(w).cuda())
+        hh, ww = torch.meshgrid(
+            torch.arange(h).cuda(), torch.arange(w).cuda(), indexing='ij'
+        )
     else:
-        hh, ww = torch.meshgrid(torch.arange(h), torch.arange(w))
-    # 计算基于相机内参的坐标变换
-    ww = (ww.float() - ox + 0.5) / fx
-    hh = (hh.float() - oy + 0.5) / fy
+        hh, ww = torch.meshgrid(
+            torch.arange(h), torch.arange(w), indexing='ij'
+        )
 
-    # 将结果堆叠为形状 (h, w, 2) 的张量
-    intrinsicLayer = torch.stack((ww, hh), dim=-1).permute(2,0,1)
+    ww = (ww.float() - ox + 0.5) / fx   # width  axis, normalised by fx / cx
+    hh = (hh.float() - oy + 0.5) / fy   # height axis, normalised by fy / cy
 
+    intrinsicLayer = torch.stack((ww, hh), dim=0)   # (2, h, w)
     return intrinsicLayer
 
 
