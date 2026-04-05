@@ -1,8 +1,8 @@
-# OpenTartanVO — TartanVO Open Reproduction
+<h1 align="center">OpenTartanVO — TartanVO Open Reproduction</h1>
 
-> 经典深度学习视觉里程计框架 TartanVO 的开源复现与工程优化版本，支持分阶段端到端单目视觉里程计训练与测试。
+<p align="center">经典深度学习视觉里程计框架 TartanVO 的开源复现与工程优化版本，支持分阶段端到端单目视觉里程计训练与测试。</p>
 
-**主要贡献者：** Shunwang Sun · Jialu Zhang · Tingxi Xue
+<p align="center"><strong>主要贡献者：</strong> Shunwang Sun · Jialu Zhang · Tingxi Xue</p>
 
 ---
 
@@ -26,13 +26,26 @@
 - **跨域泛化与鲁棒性：** 仅依赖合成数据集（TartanAir）训练即可直接泛化至真实世界（如 KITTI），在挑战性轨迹下远超传统几何方法。
 - **完备的工程框架：** 填补了原版训练代码空白，提供清晰的数据加载流水线、解耦的光流/位姿训练逻辑及完整的评测脚本。
 
+### 光流网络说明
+
+本仓库开源的光流骨干网络为 **RAFT**（Recurrent All-Pairs Field Transforms）：
+
+> Teed & Deng, *RAFT: Recurrent All-Pairs Field Transforms for Optical Flow*, ECCV 2020
+> [📄 arXiv](https://arxiv.org/abs/2003.12039) · [💻 GitHub](https://github.com/princeton-vl/RAFT)
+
+下方评估结果（Table XI / XII）中出现的 **TartanVO (Sea-RAFT)** 系列，来自我们后续论文 *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry* 的实验，该论文将光流网络替换为 [**Sea-RAFT**](https://github.com/princeton-vl/SEA-RAFT) 以探究更强骨干网络对性能的影响，**不属于本仓库开源代码的范围**：
+
+> Wang et al., *Sea-RAFT: Simple, Efficient, Accurate RAFT for Optical Flow*, ECCV 2024
+> [📄 arXiv](https://arxiv.org/abs/2405.14793) · [💻 GitHub](https://github.com/princeton-vl/SEA-RAFT)
+
 ---
 
 ## 🔧 核心训练流程
 
 OpenTartanVO 完整复现了端到端训练的四大核心模块：
 
-1. **两阶段网络架构：** - **匹配网络 $M_\theta$：** 估计连续两帧的稠密光流（支持 PWC-Net 或 Sea-RAFT）。
+1. **两阶段网络架构：**
+   - **匹配网络 $M_\theta$（光流网络）：** 估计连续两帧的稠密光流，本仓库使用 [**RAFT**](https://github.com/princeton-vl/RAFT)，输出尺寸为 $H/4 \times W/4$。
    - **位姿网络 $P_\phi$：** 以光流与相机内参层为输入，回归相对位姿 $\delta_t^{t+1} = (T, R)$。
 2. **分阶段训练策略：** - **阶段一：** 使用真值光流单独优化位姿网络 $P_\phi$。
    - **阶段二：** 联合光流与位姿网络，进行端到端优化，总损失为：
@@ -172,7 +185,7 @@ python test.py \
 
 ### 可复现性分析（Reproducibility Analysis）
 
-我们将 TartanVO 与 Sea-RAFT 光流网络集成，在严格遵循原始训练流程与损失函数（包含光流网络微调）的前提下进行复现。结果表明，OpenTartanVO 的复现版本在 KITTI 与 TartanAir 基准上均达到或超越原始实现水平。
+我们以 [Sea-RAFT](https://github.com/princeton-vl/SEA-RAFT) 替换 RAFT 作为光流骨干网络（该替换实验属于后续论文 *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*，不在本仓库开源代码范围内），在严格遵循原始训练流程与损失函数（包含光流网络微调）的前提下进行复现。结果表明，使用 Sea-RAFT 的复现版本在 KITTI 与 TartanAir 基准上均达到或超越原始 PWC-Net 实现水平。
 
 > **关于冻结光流骨干网络的说明：** 我们在 CUVO 中选择冻结 Sea-RAFT 骨干网络权重，原因在于联合微调重型光流网络与位姿估计器对 GPU 显存与训练时间消耗极大，结合 Analogy Augmentation 策略后在当前硬件上已不可行。验证实验表明，冻结模型在大多数序列上优于微调版本，平均 ATE 差异极小，仅在少数困难序列（如 KITTI 01、06 及 TartanAir ME002、MH000）上略有下降。
 
