@@ -143,7 +143,7 @@ python train.py \
     --only_flow True \
     --flow_model ./models/flow/raft-small.pth \
     --datastr tartanair \
-    --batch_size 1 --num_workers 1 \
+    --batch_size 64 --num_workers 1 \
     --logs_dir ./runs_test
 ```
 
@@ -155,7 +155,7 @@ python train.py \
     --only_pose True \
     --pose_model ./models/only_pose/single_pose_model.train \
     --datastr tartanair \
-    --batch_size 1
+    --batch_size 128
 ```
 
 **③ 完整端到端 VO 训练**
@@ -165,7 +165,7 @@ python train.py \
     --data_root /path/to/dataset \
     --vo True \
     --datastr tartanair \
-    --batch_size 1
+    --batch_size 128
 ```
 
 ### 模型测试与评估
