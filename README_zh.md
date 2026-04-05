@@ -2,7 +2,7 @@
 
 <p align="center">Learning-based 单目视觉里程计框架 TartanVO 的开源复现与工程优化版本，支持分阶段端到端单目视觉里程计训练与测试。</p>
 
-<p align="center"><strong>主要贡献者：</strong> Shunwang Sun · Jialu Zhang · Tingxi Xue</p>
+<p align="center"><strong>主要贡献者：</strong> <a href="https://sun-shun.github.io/">Shunwang Sun</a> · Jialu Zhang · Tingxi Xue</p>
 
 <p align="center">
   <a href="README.md">English</a>
@@ -190,6 +190,8 @@ python test.py \
 ### 可复现性分析（Reproducibility Analysis）
 
 我们以 [Sea-RAFT](https://github.com/princeton-vl/SEA-RAFT) 替换 RAFT 作为光流骨干网络（该替换实验属于后续论文 *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*，不在本仓库开源代码范围内），在严格遵循原始训练流程与损失函数（包含光流网络微调）的前提下进行复现。结果表明，使用 Sea-RAFT 的复现版本在 KITTI 与 TartanAir 基准上均达到或超越原始 PWC-Net 实现水平。
+
+> **模型权重：** 本仓库不提供预训练模型权重。如有需要，请发送邮件至 [shunwang_sun@163.com](mailto:shunwang_sun@163.com) 获取。
 
 > **关于冻结光流骨干网络的说明：** 我们在 CUVO 中选择冻结 Sea-RAFT 骨干网络权重，原因在于联合微调重型光流网络与位姿估计器对 GPU 显存与训练时间消耗极大，结合 Analogy Augmentation 策略后在当前硬件上已不可行。验证实验表明，冻结模型在大多数序列上优于微调版本，平均 ATE 差异极小，仅在少数困难序列（如 KITTI 01、06 及 TartanAir ME002、MH000）上略有下降。
 
