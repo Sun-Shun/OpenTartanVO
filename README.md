@@ -2,7 +2,7 @@
 
 <p align="center">An open-source reproduction and engineering optimization of the learning-based monocular visual odometry framework TartanVO, supporting staged end-to-end training and evaluation.</p>
 
-<p align="center"><strong>Contributors:</strong> Shunwang Sun · Jialu Zhang · Tingxi Xue</p>
+<p align="center"><strong>Contributors:</strong> <a href="https://sun-shun.github.io/">Shunwang Sun</a> · Jialu Zhang · Tingxi Xue</p>
 
 <p align="center">
   <a href="README_zh.md">中文文档</a>
@@ -195,6 +195,8 @@ python test.py \
 
 In our follow-up paper *Analogy-Augmented Uncertainty-aware Monocular Visual Odometry*, we replace RAFT with [Sea-RAFT](https://github.com/princeton-vl/SEA-RAFT) as the optical flow backbone (this substitution is outside the scope of this repository's open-sourced code), strictly following the original training pipeline and loss functions including flow network fine-tuning. Results show that the Sea-RAFT-based reproduction matches or surpasses the original PWC-Net implementation on both KITTI and TartanAir.
 
+> **Model Weights:** Pre-trained model weights are not included in this repository. If you need them, please contact [shunwang_sun@163.com](mailto:shunwang_sun@163.com).
+
 > **Note on freezing the flow backbone:** In CUVO, we choose to freeze the Sea-RAFT backbone weights, as jointly fine-tuning the heavy flow network and the pose estimator demands excessive GPU memory and training time — infeasible on current hardware when combined with the Analogy Augmentation strategy. Experiments show the frozen model outperforms the fine-tuned version on most sequences, with only marginal average ATE difference; slight degradation is observed on a few difficult sequences (e.g., KITTI 01, 06 and TartanAir ME002, MH000).
 
 ---
@@ -287,19 +289,3 @@ If this project is useful for your research, please consider citing:
 ```
 
 More technical details are available in the [TartanVO paper](https://arxiv.org/abs/2011.00359).
-
----
-
-## 📜 License
-
-This software is licensed under the **BSD License**.
-
-Copyright © 2020, Carnegie Mellon University. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-- Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-> **Disclaimer:** This software is provided by the copyright holders and contributors "as is" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall the copyright holder or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
