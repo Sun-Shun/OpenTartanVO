@@ -235,6 +235,14 @@ In our follow-up paper *Analogy-Augmented Uncertainty-aware Monocular Visual Odo
 
 ---
 
+## 📄 License
+
+This project is licensed under the **BSD 3-Clause License** — see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2026, Zhejiang University
+
+---
+
 ## 📄 Citation
 
 If this project is useful for your research, please consider citing:

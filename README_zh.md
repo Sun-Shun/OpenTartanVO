@@ -232,6 +232,14 @@ python test.py \
 
 ---
 
+## 📄 许可证 (License)
+
+本项目采用 **BSD 3-Clause 许可证** 进行开源，详情请参见 [LICENSE](LICENSE) 文件。
+
+Copyright (c) 2026, Zhejiang University
+
+---
+
 ## 📄 引用 (Citation)
 
 如果本项目对你的研究有所帮助，请引用以下论文：
