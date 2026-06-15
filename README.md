@@ -264,7 +264,7 @@ If this project is useful for your research, please consider citing:
 ```bibtex
 @misc{opentrain2025,
   title     = {OpenTartanVO: An Open-Source Reproduction and Engineering Optimization of TartanVO},
-  author    = {Sun, Shunwang and Zhang, Jialu and Xue, Tingxi},
+  author    = {Zhang, Jialu and Sun, Shunwang and Xue, Tingxi},
   year      = {2025},
   howpublished = {\url{https://github.com/Sun-Shun/OpenTartanVO}}
 }
