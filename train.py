@@ -73,6 +73,8 @@ if __name__ == '__main__':
                         help='TensorBoard log directory (default: ./runs_test)')
     parser.add_argument('--root_path',  type=str, default='./models',
                         help='Directory to save checkpoints (default: ./models)')
+    parser.add_argument('--train_type', type=str, default=None,
+                        help='Sub-dir name for checkpoints/TensorBoard (default: only_pose/only_flow/vo)')
     parser.add_argument('--pose_model', type=str, default=None,
                         help='Pre-trained pose model path (required when --only_pose or --vo)')
     parser.add_argument('--flow_model', type=str, default=None,
@@ -97,8 +99,19 @@ if __name__ == '__main__':
     # ── Optimisation ───────────────────────────
     parser.add_argument('--batch_size',  type=int, default=1)
     parser.add_argument('--num_workers', type=int, default=1)
+    parser.add_argument('--epochs',       type=int,   default=200,
+                        help='Number of training epochs (default: 200)')
+    parser.add_argument('--lr',           type=float, default=1e-4,
+                        help='Learning rate (default: 1e-4, suited for pose training)')
+    parser.add_argument('--weight_decay', type=float, default=1e-4,
+                        help='AdamW weight decay (default: 1e-4)')
 
     args = parser.parse_args()
+
+    # ── Auto-assign train_type if not given ────
+    # Determines the checkpoint/TensorBoard sub-dir, e.g. ./models/only_pose/
+    if args.train_type is None:
+        args.train_type = 'only_pose' if args.only_pose else ('only_flow' if args.only_flow else 'vo')
 
     # ── Validate training mode flags ───────────
     active = sum([args.only_flow, args.only_pose, args.vo])
@@ -130,8 +143,12 @@ if __name__ == '__main__':
     if args.only_pose:
         # spawn is required for CUDA + DataLoader with multiple workers
         multiprocessing.set_start_method('spawn')
-        vo_model.pose_train(epochs=100, lr_rate=1e-4, step_size=[30, 50],
-                            pre_train=False, weight_decay=1e-4)
+        # Scale the LR-decay milestones with the epoch count so the schedule
+        # shape matches the original 100-epoch config (decays at 30% and 50%).
+        # epochs=200 -> [60, 100]
+        milestones = [int(0.3 * args.epochs), int(0.5 * args.epochs)]
+        vo_model.pose_train(epochs=args.epochs, lr_rate=args.lr, step_size=milestones,
+                            pre_train=False, weight_decay=args.weight_decay)
 
     elif args.only_flow:
         vo_model.flow_train(epochs=100, lr_rate=3e-4, step_size=[30, 50],

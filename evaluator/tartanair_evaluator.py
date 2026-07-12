@@ -20,8 +20,12 @@ class TartanAirEvaluator:
         """
         # load trajectories
         try:
-            gt_traj = np.loadtxt(gt_traj[0])
-            est_traj = np.loadtxt(est_traj)
+            if isinstance(gt_traj, str):
+                gt_traj = np.loadtxt(gt_traj)
+            elif isinstance(gt_traj, (list, tuple)):
+                gt_traj = np.loadtxt(gt_traj[0])
+            if isinstance(est_traj, str):
+                est_traj = np.loadtxt(est_traj)
         except:
             pass
 

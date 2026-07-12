@@ -3,6 +3,11 @@ import argparse
 import multiprocessing
 from glob import glob
 
+# Pin device enumeration to PCI bus order so indices match `nvidia-smi`
+# (must be set before any CUDA use; test.py does not import TartanVO).
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '0')
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader

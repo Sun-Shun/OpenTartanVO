@@ -34,6 +34,9 @@ import os
 import torch
 import random
 
+# Pin device enumeration to PCI bus order so indices match `nvidia-smi`
+# (otherwise CUDA's default order may surface an A100 as device 0 on this host).
+os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 from torch.utils.data import DataLoader
 from Datasets.VODataest import PoseDataset, FlowDataset, VODataset
@@ -45,7 +48,7 @@ from Network.VONet import VONet
 from torch.utils.tensorboard import SummaryWriter
 from torch.cuda.amp import autocast, GradScaler
 
-SEED = "12345"
+SEED = 12345  # integer seed (numpy 2.x rejects string seeds)
 
 class TartanVO(object):
     def __init__(self, args, train_img, train_flow, train_mask, train_pose, test_img, test_flow, test_mask, test_pose):
