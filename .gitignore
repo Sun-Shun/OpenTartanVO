@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Training checkpoints / model weights (large, not for repo)
+models/*
+!models/.gitkeep
+
+# TensorBoard runs
+runs/
+runs_*/
+
+# Training / test logs
+*.log
+
+# Evaluation results and trajectory plots
+results/
+results_*/
+ckpt_logs/
+
+# Local data wrappers (machine-specific symlinks, not for the repo)
+data_tartanair/
+data_val/
+data_kitti/
