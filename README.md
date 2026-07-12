@@ -122,8 +122,13 @@ Dataset_Root/
 | `--batch_size` | — | `1` | Batch size |
 | `--num_workers` | — | `1` | DataLoader worker count |
 | `--sample_step` | — | `1` | Data sub-sampling step (set to 200 for quick debug runs) |
+| `--train_type` | — | auto | Checkpoint/TensorBoard sub-dir name (default: `only_pose` / `only_flow` / `vo`) |
+| `--epochs` | — | `200` | Number of training epochs (pose path) |
+| `--lr` | — | `1e-4` | Learning rate (pose path) |
+| `--weight_decay` | — | `1e-4` | AdamW weight decay |
 
 > Exactly one of `--only_flow`, `--only_pose`, and `--vo` must be `True`.
+> For `--only_pose`, the LR-decay milestones auto-scale with `--epochs` (decays at 30% and 50%, e.g. 200 -> `[60, 100]`), and the pose network is trained from scratch - `--pose_model` is **not** loaded in this mode.
 
 **test.py arguments**
 
@@ -157,9 +162,9 @@ python train.py \
 python train.py \
     --data_root /path/to/dataset \
     --only_pose True \
-    --pose_model ./models/only_pose/single_pose_model.train \
     --datastr tartanair \
-    --batch_size 128
+    --batch_size 128 \
+    --epochs 200
 ```
 
 **③ Full end-to-end VO**

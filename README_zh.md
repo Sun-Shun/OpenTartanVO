@@ -119,8 +119,13 @@ Dataset_Root/
 | `--batch_size` | — | `1` | 批大小 |
 | `--num_workers` | — | `1` | DataLoader 工作进程数 |
 | `--sample_step` | — | `1` | 数据抽样步长（调试时可设为 200）|
+| `--train_type` | - | auto | checkpoint/TensorBoard 子目录名（默认：`only_pose` / `only_flow` / `vo`）|
+| `--epochs` | - | `200` | 训练轮数（pose 模式）|
+| `--lr` | - | `1e-4` | 学习率（pose 模式）|
+| `--weight_decay` | - | `1e-4` | AdamW 权重衰减 |
 
 > `--only_flow`、`--only_pose`、`--vo` 三者必须恰好有一个为 `True`。
+> `--only_pose` 模式下，LR 衰减里程碑会随 `--epochs` 自动缩放（在 30% 和 50% 处衰减，如 200 -> `[60, 100]`），且位姿网络从零训练--此模式下 `--pose_model` **不会**被加载。
 
 **test.py 参数**
 
@@ -154,9 +159,9 @@ python train.py \
 python train.py \
     --data_root /path/to/dataset \
     --only_pose True \
-    --pose_model ./models/only_pose/single_pose_model.train \
     --datastr tartanair \
-    --batch_size 128
+    --batch_size 128 \
+    --epochs 200
 ```
 
 **③ 完整端到端 VO 训练**
